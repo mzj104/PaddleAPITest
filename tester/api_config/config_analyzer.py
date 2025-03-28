@@ -156,6 +156,15 @@ class TensorConfig:
                         self.numpy_tensor = (numpy.random.random(self.shape) + 0.5).astype(dtype)
                 else:
                     self.numpy_tensor = (numpy.random.randint(0, 2048, size=self.shape)).astype(self.dtype)
+
+            elif api_config.api_name in ["paddle.Tensor.argmax", "paddle.argmax","paddle.Tensor.argmin","paddle.argmin"]:
+                if "axis" in api_config.kwargs and 'x' in api_config.kwargs:
+                    arr=api_config.kwargs['x']                    
+                min_dim = min(arr.shape)
+                indices = (numpy.random.randint(0, min_dim-1, size=self.numel())).astype("int64")
+                self.numpy_tensor = indices.reshape(self.shape)
+                self.dtype = "int64"
+
             # u
             # v
             # w
@@ -533,6 +542,8 @@ class APIConfig:
         elif tocken is None:
             return None, None
         else:
+            if tocken[0]=='0':
+                tocken=tocken+'0.'
             value = eval(tocken)
         return value, offset
 

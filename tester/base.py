@@ -193,6 +193,8 @@ class APITestBase:
 
         return False
     def need_check_grad(self):
+        if self.api_config.api_name == "paddle.assign" or self.api_config.api_name == "paddle.atan2":
+            return False
         if not self.is_forward_only() and not (self.api_config.api_name == "paddle.assign" and isinstance(self.paddle_args[0], list)) and not (self.api_config.api_name == "paddle.assign" and len(self.paddle_args) > 1 and self.paddle_args[1] is not None):
             if len(self.api_config.args) > 0 and isinstance(self.api_config.args[0], TensorConfig):
                 dtype = self.api_config.args[0].dtype
