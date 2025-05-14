@@ -372,6 +372,13 @@
     "paddle.geometric.segment_max": {
         "Rule":"SegmentMaxRule"
     },
+    "paddle.geometric.send_u_recv": {
+        "Rule":"SendURecvRule",
+        "set_defaults": {
+            "reduce_op": "sum",
+            "out_size": "None"
+        }
+    },
     "paddle.greater_equal": {
         "torch_api": "torch.ge",
         "paddle_torch_args_map": {

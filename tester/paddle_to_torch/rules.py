@@ -2602,6 +2602,37 @@ result = ans
         code = impl.splitlines()
         return ConvertResult.success(paddle_api, code)
 
+class SendURecvRule(BaseRule):
+    def apply(self, paddle_api: str) -> ConvertResult:
+        defaults_code, _ = self.apply_generic()
+        core = """
+if isinstance(src_index, torch.Tensor) is False:
+    src_index = torch.tensor(src_index, dtype=torch.long)
+if isinstance(dst_index, torch.Tensor) is False:
+    dst_index = torch.tensor(dst_index, dtype=torch.long)
+msg = x[src_index]  # [E, F]
+if out_size is None:
+    out_size = int(dst_index.max()) + 1
+out = torch.zeros((out_size, x.shape[1]), dtype=x.dtype, device=x.device)
+
+if reduce_op == 'sum':
+    out.index_add_(0, dst_index, msg)
+elif reduce_op == 'mean':
+    count = torch.zeros(out_size, dtype=x.dtype, device=x.device)
+    count.index_add_(0, dst_index, torch.ones_like(dst_index, dtype=x.dtype))
+    out.index_add_(0, dst_index, msg)
+    out = out / count.clamp(min=1).unsqueeze(1)
+elif reduce_op == 'max':
+    out = out - float('inf')
+    out = out.scatter_reduce(0, dst_index[:, None].expand_as(msg), msg, reduce='amax', include_self=False)
+elif reduce_op == 'min':
+    out = out + float('inf')
+    out = out.scatter_reduce(0, dst_index[:, None].expand_as(msg), msg, reduce='amin', include_self=False)
+result = out
+"""
+        code = Code(core=defaults_code + core.splitlines())
+        return ConvertResult.success(paddle_api, code)
+
 
 class ScatterRule(BaseRule):
     def apply(self, paddle_api: str) -> ConvertResult:
